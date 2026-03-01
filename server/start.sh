@@ -92,7 +92,8 @@ else
 fi
 $PY_CMD -c "import sys; exit(0 if sys.version_info >= (3,11) else 1)" || \
   fail "Python 3.11+ required. Current: $($PY_CMD --version)"
-ok "Python $($PY_CMD -c 'import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}\")')"
+PY_VER=$($PY_CMD -c "import sys; print(str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
+ok "Python $PY_VER"
 
 # ── 2. Virtual environment ───────────────────────────────────────────────────
 info "Checking virtual environment..."
@@ -127,8 +128,8 @@ done < requirements.txt
 
 if [ ${#MISSING[@]} -gt 0 ]; then
   info "Installing missing packages: ${MISSING[*]}"
-  "$PIP" install --upgrade pip -q
-  "$PIP" install -r requirements.txt -q
+  "$PYTHON" -m pip install --upgrade pip -q 2>/dev/null || true
+  "$PYTHON" -m pip install -r requirements.txt -q
   ok "Dependencies installed"
 else
   ok "All dependencies satisfied"
