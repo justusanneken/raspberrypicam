@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=960, height=640, initial-scale=1.0" />
+  <title>CAM · LIVE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <!-- ── Grid shell ─────────────────────────────────────────────── -->
+  <div class="shell">
+
+    <!-- ── Header bar ────────────────────────────────────────────── -->
+    <header class="topbar">
+      <div class="topbar__brand">
+        <span class="topbar__dot" id="dot"></span>
+        <span class="topbar__label">CAM</span>
+      </div>
+      <div class="topbar__meta" id="fps-display">— fps</div>
+      <div class="topbar__clock" id="clock">--:--:--</div>
+    </header>
+
+    <!-- ── Main content ───────────────────────────────────────────── -->
+    <main class="stage">
+
+      <!-- video feed -->
+      <div class="feed-wrap" id="feed-wrap">
+        <img id="feed" src="" alt="awaiting stream" />
+        <div class="feed-overlay" id="overlay">
+          <svg class="offline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+          </svg>
+          <span>Waiting for stream…</span>
+        </div>
+        <div class="feed__ts" id="frame-ts"></div>
+      </div>
+
+      <!-- sidebar -->
+      <aside class="sidebar">
+        <section class="card" id="card-status">
+          <h2 class="card__title">STATUS</h2>
+          <ul class="stat-list">
+            <li class="stat-row">
+              <span class="stat-key">Source</span>
+              <span class="stat-val" id="stat-connected">OFFLINE</span>
+            </li>
+            <li class="stat-row">
+              <span class="stat-key">Frame&nbsp;#</span>
+              <span class="stat-val mono" id="stat-frames">0</span>
+            </li>
+            <li class="stat-row">
+              <span class="stat-key">FPS</span>
+              <span class="stat-val mono" id="stat-fps">—</span>
+            </li>
+            <li class="stat-row">
+              <span class="stat-key">Latency</span>
+              <span class="stat-val mono" id="stat-latency">—</span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="card" id="card-server">
+          <h2 class="card__title">SERVER</h2>
+          <ul class="stat-list">
+            <li class="stat-row">
+              <span class="stat-key">UTC</span>
+              <span class="stat-val mono" id="stat-utc">—</span>
+            </li>
+            <li class="stat-row">
+              <span class="stat-key">Last&nbsp;frame</span>
+              <span class="stat-val mono" id="stat-last">—</span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="card card--res">
+          <h2 class="card__title">FEED</h2>
+          <ul class="stat-list">
+            <li class="stat-row">
+              <span class="stat-key">Resolution</span>
+              <span class="stat-val mono">960 × 640</span>
+            </li>
+            <li class="stat-row">
+              <span class="stat-key">Codec</span>
+              <span class="stat-val mono">JPEG</span>
+            </li>
+            <li class="stat-row">
+              <span class="stat-key">Transport</span>
+              <span class="stat-val mono">WS → SIO</span>
+            </li>
+          </ul>
+        </section>
+
+        <div class="badge-row">
+          <span class="badge" id="badge-live">● LIVE</span>
+        </div>
+      </aside>
+    </main>
+
+    <!-- ── Footer ─────────────────────────────────────────────────── -->
+    <footer class="bottombar">
+      <span id="footer-msg">Initialising connection…</span>
+    </footer>
+  </div>
+
+  <!-- ── Socket.IO client ───────────────────────────────────────────── -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

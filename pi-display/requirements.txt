@@ -1,0 +1,3 @@
+# pi-display — no external Python packages needed beyond stdlib.
+# Chromium must be installed via apt:
+#   sudo apt install chromium-browser unclutter
