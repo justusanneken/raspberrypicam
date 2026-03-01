@@ -22,6 +22,14 @@ echo "$SEP"
 echo "  CAM Stream — Camera Pi Preflight"
 echo "$SEP"
 
+# ── 0. Raspberry Pi check ────────────────────────────────────────────────────
+info "Checking platform..."
+if ! grep -qi "raspberry" /proc/device-tree/model 2>/dev/null && \
+   ! grep -qi "raspberry" /proc/cpuinfo 2>/dev/null; then
+  fail "This script is for Raspberry Pi only. On macOS use: cd ../camera-mac && ./start.sh"
+fi
+ok "Running on Raspberry Pi"
+
 # ── 1. Python ────────────────────────────────────────────────────────────────
 info "Checking Python 3..."
 if ! command -v python3 &>/dev/null; then
