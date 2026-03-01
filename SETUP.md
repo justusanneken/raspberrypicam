@@ -14,7 +14,7 @@ Three-component system:
 
 - Python 3.11+
 - Devices on the **same local network**
-- Note the **IP address of the server machine** — you'll use it throughout (`SERVER_IP`)
+- Note the **IP address of the server machine** — you'll use it throughout (`10.0.0.8`)
 
 ---
 
@@ -104,10 +104,10 @@ pip install -r requirements.txt
 
 ### 2.4 Start streaming
 
-Replace `SERVER_IP` with the actual IP address of your server machine.
+Replace `10.0.0.8` with the actual IP address of your server machine.
 
 ```bash
-python stream.py --server ws://SERVER_IP:8765 --fps 30 --quality 80
+python stream.py --server ws://10.0.0.8:8765 --fps 30 --quality 80
 ```
 
 Options:
@@ -134,7 +134,7 @@ After=network-online.target
 [Service]
 User=pi
 WorkingDirectory=/home/pi/cam/pi-camera
-ExecStart=/home/pi/cam/pi-camera/.venv/bin/python stream.py --server ws://SERVER_IP:8765
+ExecStart=/home/pi/cam/pi-camera/.venv/bin/python stream.py --server ws://10.0.0.8:8765
 Restart=always
 RestartSec=3
 
@@ -181,13 +181,13 @@ xset s noblank
 ```bash
 cd pi-display
 chmod +x kiosk.sh
-./kiosk.sh --server http://SERVER_IP:5000
+./kiosk.sh --server http://10.0.0.8:5000
 ```
 
 Or directly with Python:
 
 ```bash
-python display.py --server http://SERVER_IP:5000
+python display.py --server http://10.0.0.8:5000
 ```
 
 Options:
@@ -214,7 +214,7 @@ User=pi
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/pi/.Xauthority
 WorkingDirectory=/home/pi/cam/pi-display
-ExecStart=/home/pi/cam/pi-display/kiosk.sh --server http://SERVER_IP:5000
+ExecStart=/home/pi/cam/pi-display/kiosk.sh --server http://10.0.0.8:5000
 Restart=always
 RestartSec=5
 
