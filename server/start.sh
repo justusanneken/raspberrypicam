@@ -19,7 +19,14 @@ SEP="─────────────────────────
 
 ok()   { echo "  [✓] $*"; }
 info() { echo "  [→] $*"; }
-fail() { echo "  [✗] $*"; exit 1; }
+fail() { echo "  [✗] $*"; echo ""; read -rp "  Press Enter to close..."; exit 1; }
+
+# Always pause before the window closes (errors, normal exit, Ctrl+C)
+_pause_on_exit() {
+  echo ""
+  read -rp "  Press Enter to close..." || true
+}
+trap _pause_on_exit EXIT
 
 # ── stop / status sub-commands ────────────────────────────────────────────────
 if [ "${1:-}" = "stop" ]; then
@@ -152,6 +159,7 @@ cleanup() {
   echo "  Server stopped."
   echo "$SEP"
   echo ""
+  trap - EXIT   # remove the pause-on-exit trap for clean stops
   exit 0
 }
 trap cleanup INT TERM
