@@ -11,8 +11,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 VENV="$SCRIPT_DIR/.venv"
-PYTHON="$VENV/bin/python"
-PIP="$VENV/bin/pip"
+# Windows (Git Bash) uses Scripts\, Linux/Mac uses bin/
+if [ -d "$VENV/Scripts" ]; then
+  PYTHON="$VENV/Scripts/python"
+  PIP="$VENV/Scripts/pip"
+else
+  PYTHON="$VENV/bin/python"
+  PIP="$VENV/bin/pip"
+fi
 PIDFILE="$SCRIPT_DIR/.server.pid"
 
 SEP="─────────────────────────────────────────"
@@ -57,7 +63,7 @@ if [ "${1:-}" = "status" ]; then
     PID=$(cat "$PIDFILE")
     if kill -0 "$PID" 2>/dev/null; then
       ok "Server is RUNNING (PID $PID)"
-      echo "  Dashboard → http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo localhost):5000"
+      echo "  Dashboard → http://localhost:5000"
     else
       echo "  [!] Server is STOPPED (stale PID $PID)"
       rm -f "$PIDFILE"
@@ -76,22 +82,31 @@ echo "$SEP"
 
 # ── 1. Python ────────────────────────────────────────────────────────────────
 info "Checking Python 3..."
-if ! command -v python3 &>/dev/null; then
-  fail "python3 not found. Install Python 3.11+ and re-run."
-fi
-PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-REQUIRED="3.11"
-if python3 -c "import sys; exit(0 if sys.version_info >= (3,11) else 1)"; then
-  ok "Python $PY_VER"
+# Windows may only have 'python', Linux/Mac may only have 'python3'
+if command -v python3 &>/dev/null; then
+  PY_CMD="python3"
+elif command -v python &>/dev/null; then
+  PY_CMD="python"
 else
-  fail "Python $PY_VER found but 3.11+ required."
+  fail "Python not found. Install Python 3.11+ and re-run."
 fi
+$PY_CMD -c "import sys; exit(0 if sys.version_info >= (3,11) else 1)" || \
+  fail "Python 3.11+ required. Current: $($PY_CMD --version)"
+ok "Python $($PY_CMD -c 'import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}\")')"
 
 # ── 2. Virtual environment ───────────────────────────────────────────────────
 info "Checking virtual environment..."
 if [ ! -d "$VENV" ]; then
   info "Creating .venv..."
-  python3 -m venv "$VENV"
+  $PY_CMD -m venv "$VENV"
+  # Re-detect paths after creation
+  if [ -d "$VENV/Scripts" ]; then
+    PYTHON="$VENV/Scripts/python"
+    PIP="$VENV/Scripts/pip"
+  else
+    PYTHON="$VENV/bin/python"
+    PIP="$VENV/bin/pip"
+  fi
   ok "Virtual environment created"
 else
   ok "Virtual environment exists"
@@ -122,8 +137,10 @@ fi
 # ── 4. Port availability ─────────────────────────────────────────────────────
 info "Checking ports 5000 and 8765..."
 for PORT in 5000 8765; do
-  if lsof -iTCP:"$PORT" -sTCP:LISTEN &>/dev/null; then
-    fail "Port $PORT is already in use. Free it and re-run (lsof -i :$PORT)."
+  if command -v lsof &>/dev/null; then
+    lsof -iTCP:"$PORT" -sTCP:LISTEN &>/dev/null && fail "Port $PORT is already in use."
+  elif command -v netstat &>/dev/null; then
+    netstat -an 2>/dev/null | grep -q ":$PORT.*LISTEN" && fail "Port $PORT is already in use."
   fi
 done
 ok "Ports 5000 and 8765 are free"
@@ -139,7 +156,7 @@ ok "All required files present"
 echo ""
 echo "$SEP"
 echo "  All checks passed. Starting server..."
-echo "  Dashboard → http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo localhost):5000"
+echo "  Dashboard → http://localhost:5000  (or http://10.0.0.8:5000 from other devices)"
 echo "  Camera WS → ws://0.0.0.0:8765"
 echo "  Press Ctrl+C to stop  |  ./start.sh stop  to stop from another terminal"
 echo "$SEP"
