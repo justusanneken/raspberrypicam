@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
+.server.pid
 =======
 # Byte-compiled / optimized / DLL files
 __pycache__/

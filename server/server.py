@@ -23,10 +23,31 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 
 # ── Logging ──────────────────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [SERVER] %(levelname)s — %(message)s",
-)
+class _ColorFormatter(logging.Formatter):
+    RESET  = "\033[0m"
+    GREY   = "\033[90m"
+    CYAN   = "\033[96m"
+    GREEN  = "\033[92m"
+    YELLOW = "\033[93m"
+    RED    = "\033[91m"
+    BOLD   = "\033[1m"
+    LEVEL_COLORS = {
+        logging.DEBUG:    GREY,
+        logging.INFO:     CYAN,
+        logging.WARNING:  YELLOW,
+        logging.ERROR:    RED,
+        logging.CRITICAL: RED + BOLD,
+    }
+    def format(self, record):
+        color = self.LEVEL_COLORS.get(record.levelno, self.RESET)
+        ts    = self.formatTime(record, "%H:%M:%S")
+        lvl   = f"{color}{record.levelname:<8}{self.RESET}"
+        msg   = record.getMessage()
+        return f"  {self.GREY}{ts}{self.RESET}  {lvl}  {msg}"
+
+_handler = logging.StreamHandler()
+_handler.setFormatter(_ColorFormatter())
+logging.basicConfig(level=logging.INFO, handlers=[_handler])
 log = logging.getLogger(__name__)
 
 # ── Flask / Socket.IO setup ───────────────────────────────────────────────────

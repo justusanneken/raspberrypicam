@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 # server/start.sh — preflight check, auto-install, then launch the server
+#
+# Usage:
+#   ./start.sh          — start the server (auto-restarts on crash)
+#   ./start.sh stop     — stop a running background instance
+#   ./start.sh status   — show whether the server is running
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -8,12 +13,54 @@ cd "$SCRIPT_DIR"
 VENV="$SCRIPT_DIR/.venv"
 PYTHON="$VENV/bin/python"
 PIP="$VENV/bin/pip"
+PIDFILE="$SCRIPT_DIR/.server.pid"
 
 SEP="─────────────────────────────────────────"
 
 ok()   { echo "  [✓] $*"; }
 info() { echo "  [→] $*"; }
 fail() { echo "  [✗] $*"; exit 1; }
+
+# ── stop / status sub-commands ────────────────────────────────────────────────
+if [ "${1:-}" = "stop" ]; then
+  if [ -f "$PIDFILE" ]; then
+    PID=$(cat "$PIDFILE")
+    if kill -0 "$PID" 2>/dev/null; then
+      echo ""
+      info "Stopping server (PID $PID)..."
+      kill "$PID"
+      sleep 1
+      kill -0 "$PID" 2>/dev/null && kill -9 "$PID" || true
+      rm -f "$PIDFILE"
+      ok "Server stopped."
+    else
+      echo "  [!] PID $PID is not running. Cleaning up stale pidfile."
+      rm -f "$PIDFILE"
+    fi
+  else
+    echo "  [!] No running server found (no .server.pid file)."
+  fi
+  echo ""
+  exit 0
+fi
+
+if [ "${1:-}" = "status" ]; then
+  echo ""
+  if [ -f "$PIDFILE" ]; then
+    PID=$(cat "$PIDFILE")
+    if kill -0 "$PID" 2>/dev/null; then
+      ok "Server is RUNNING (PID $PID)"
+      echo "  Dashboard → http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo localhost):5000"
+    else
+      echo "  [!] Server is STOPPED (stale PID $PID)"
+      rm -f "$PIDFILE"
+    fi
+  else
+    echo "  [!] Server is STOPPED"
+  fi
+  echo ""
+  exit 0
+fi
 
 echo ""
 echo "$SEP"
@@ -81,13 +128,45 @@ for f in server.py requirements.txt templates/index.html static/style.css static
 done
 ok "All required files present"
 
-# ── Launch ────────────────────────────────────────────────────────────────────
+# ── Launch (with restart loop) ────────────────────────────────────────────────
 echo ""
 echo "$SEP"
 echo "  All checks passed. Starting server..."
-echo "  Dashboard → http://localhost:5000"
+echo "  Dashboard → http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo localhost):5000"
 echo "  Camera WS → ws://0.0.0.0:8765"
+echo "  Press Ctrl+C to stop  |  ./start.sh stop  to stop from another terminal"
 echo "$SEP"
 echo ""
 
-exec "$PYTHON" "$SCRIPT_DIR/server.py" --host 0.0.0.0 --port 5000 --ws-port 8765
+# Write our own PID so 'stop' can find us
+echo $$ > "$PIDFILE"
+
+# Clean up PID file and child on exit (Ctrl+C or kill)
+_CHILD_PID=""
+cleanup() {
+  echo ""
+  echo "$SEP"
+  echo "  [$(date '+%H:%M:%S')] Shutting down server..."
+  [ -n "$_CHILD_PID" ] && kill "$_CHILD_PID" 2>/dev/null || true
+  rm -f "$PIDFILE"
+  echo "  Server stopped."
+  echo "$SEP"
+  echo ""
+  exit 0
+}
+trap cleanup INT TERM
+
+RESTART_DELAY=5
+while true; do
+  echo "  [$(date '+%H:%M:%S')] Starting server.py..."
+  "$PYTHON" "$SCRIPT_DIR/server.py" --host 0.0.0.0 --port 5000 --ws-port 8765 &
+  _CHILD_PID=$!
+  wait "$_CHILD_PID" || true
+  EXIT_CODE=$?
+  echo ""
+  echo "$SEP"
+  echo "  [$(date '+%H:%M:%S')] Server exited (code $EXIT_CODE)."
+  echo "  Restarting in $RESTART_DELAY seconds... (Ctrl+C or './start.sh stop' to quit)"
+  echo "$SEP"
+  sleep $RESTART_DELAY
+done
