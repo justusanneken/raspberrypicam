@@ -4,7 +4,7 @@ set -euo pipefail
 
 echo "==> Installing system dependencies..."
 sudo apt update
-sudo apt install -y python3-picamera2 python3-pip python3-venv
+sudo apt install -y python3-picamera2 python3-pip python3-venv python3-opencv
 
 echo "==> Creating virtual environment (with system-site-packages for picamera2)..."
 python3 -m venv .venv --system-site-packages
